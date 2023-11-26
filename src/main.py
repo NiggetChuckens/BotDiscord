@@ -44,7 +44,7 @@ async def status(ctx):
     with open(Path('BotDiscord/src/embeds/kimizero5.json'), 'r') as f:
         data = json.load(f)
     embed = DiscordEmbed.from_dict(data)
-    webhook = 'https://discord.com/api/webhooks/1178251404188581949/aXJn9PoxTh4bXyrwSHs60nIIuV1W0woOovLrR4FQwMvEdx6WL27buEKiCRzkOwT4sm3N'
+    webhook = ''
     webhook.add_embed(embed)
     response=webhook.execute()
 bot.run(token)
