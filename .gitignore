@@ -1,15 +1,17 @@
 
 src/.env
 
-src/Modules/Bot1.py
+src/Modules/trash/Bot1.py
 
-src/Modules/Bot2.py
+src/Modules/trash/Bot2.py
 
-src/Modules/CleanBot.py
+src/Modules/trash/CleanBot.py
 
-src/Modules/Gpt-bot.py
+src/Modules/trash/Gpt-bot.py
 
-src/Modules/
+src/Modules/trash/
+
+src/modules/__pycache__
 
 src/embeds/
 
