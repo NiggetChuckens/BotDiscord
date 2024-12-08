@@ -1,8 +1,8 @@
-import os
-import discord
-import mysql.connector
+import os, discord, mysql.connector, sys
 from discord.ext import commands
-from modules.db_actions import update_status_in_db, send_status_embed, add_show_to_db
+from modules.himatimes.db_actions import update_status_in_db, send_status_embed, add_show_to_db
+
+sys.path.append('src/modules/himatimes')
 
 intents = discord.Intents.all()
 intents.guilds = True

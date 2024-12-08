@@ -1,75 +1,130 @@
-import os
-import discord
-import mysql.connector
 from dotenv import load_dotenv
 from discord.ext import commands
-from modules.moderation import clear
-from modules.db_actions import save_server_id_to_db, create_table_w_server_name, check_db_info, update_status_in_db, send_status_embed, add_show_to_db
-from modules.embed_stuff import status as anime_status, positions
+import os, discord, asyncio, tempfile, sys
+from discord_slash import SlashCommand, SlashContext
+from discord_slash.utils.manage_commands import create_option
+
+sys.path.append('src/modules')
+sys.path.append('src/modules/jpaw')
+sys.path.append('src/modules/himatimes')
 
 load_dotenv()
+
+##################################################################################
+# Intents for the bot
 intents = discord.Intents.all()
 intents.guilds = True
-bot = commands.Bot(command_prefix='^', intents=intents)
 
-@bot.event
-async def on_guild_join(guild):
-    server_name = guild.name
-    with mysql.connector.connect(
-            host=os.getenv('DATABASE_HOST'),
-            user=os.getenv('DATABASE_USER'),
-            password=os.getenv('DATABASE_PASSWORD'),
-            database=os.getenv('DATABASE_NAME')
-        ) as db:
-        await create_table_w_server_name(db, server_name)
+bot = commands.Bot(command_prefix='^', intents=intents)
+slash = SlashCommand(bot, sync_commands=True)
+
+
+
+##################################################################################
+# Bot events
 @bot.event
 async def on_ready():
-    print(f'We have logged in as {bot.user}')  
+    print(f'We have logged in as {bot.user}') 
+    await slash.sync_all_commands()
+
+
+##################################################################################
+#JPAW paste commands
+@commands.has_role(889001453316878367)        
+@slash.slash(name="Paste",
+             description="Genera paste de emision",
+             options=[
+                 create_option(
+                    name="status",
+                    description="Finalizado o Emision",
+                    option_type=3,
+                    required=True
+                ),
+                create_option(
+                    name="routes",
+                    description="Rutas de los capitulos",
+                    option_type=3,
+                    required=True
+                ),
+             ])
+async def paste(ctx: SlashContext, status, routes):
+    from jpawPaste import createPaste
+    name, fansub, response = await createPaste(status, routes)
+    print(fansub, name)
+    fansub = fansub.replace(name, "")
+    
+    title = discord.Embed(title="Titulo del paste", 
+                            description=f"{name}", 
+                            color=discord.Color.green()
+                            )
+    version = discord.Embed(title="Version", 
+                            description=f"{fansub}", 
+                            color=discord.Color.green()
+                            )
+    msgtitle = await ctx.send(embed=title)
+    msgversion = await ctx.send(embed=version)
+    
+    try:    
+        embed = discord.Embed(title="Paste generado", 
+                            description=f"El paste ha sido generado correctamente\n\n```{response}```", 
+                            color=discord.Color.green()
+                            )
+        msg = await ctx.send(embed=embed)
+        await asyncio.sleep(60)
+        await msgtitle.delete()
+        await msgversion.delete()
+        await msg.delete()
         
-@bot.command(aliases=["purge", "delete", 'clear'])
-@commands.has_permissions(manage_messages=True)
-async def limpiar(ctx, amount: int = 1):
+    except Exception as e:
+        print(e)
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file.write(response.encode('utf-8'))
+            temp_file.close()
+            file_path = temp_file.name
+            msg = await ctx.send(file=discord.File(file_path, "generated_paste.txt"))
+            os.remove(file_path)
+            await asyncio.sleep(60)
+            await msgtitle.delete()
+            await msgversion.delete()
+            await msg.delete()
+    
+@commands.has_role(889001453316878367)
+@slash.slash(name="newCap",
+             description="Genera paste para nuevo capitulo en emision",
+             options=[
+                 create_option(
+                    name="number",
+                    description="Numero del capitulo",
+                    option_type=3,
+                    required=True
+                ),
+                create_option(
+                    name="routes",
+                    description="Rutas del capitulo",
+                    option_type=3,
+                    required=True
+                ),
+             ])
+async def newCap(ctx: SlashContext, number, routes):
+    from jpawPaste import newemisionCap
+    response = await newemisionCap(number, routes)    
+    embed = discord.Embed(title="Paste generado", 
+                        description=f"El paste ha sido generado correctamente\n\n```{response}```", 
+                        color=discord.Color.green()
+                        )
+    msg = await ctx.send(embed=embed)
+    await asyncio.sleep(15)
+    await msg.delete()
+
+##################################################################################
+#Moderation commands
+
+@slash.slash(name="purge")
+async def purge(ctx: SlashContext, amount: int = 1):
+    from moderation import clear
     await clear(ctx, amount)
-@bot.command(name="jumbo")
-async def jumbo(ctx, emoji: discord.Emoji):
-    await ctx.send(emoji.url)
-@bot.command(alias=['status', 'estado'])
-@commands.has_role('Staff')
-async def status(ctx, 
-                name: str, 
-                n_epi: int = None, 
-                to_do: str = None, 
-                position: str = None,
-                ):
-    result = await anime_status(ctx, name, n_epi, to_do, position, f'{ctx.guild.name.lower()}_anime')
-    if result == False:
-        database = mysql.connector.connect(
-            host=os.getenv('DATABASE_HOST'),
-            user=os.getenv('DATABASE_USER'),
-            password=os.getenv('DATABASE_PASSWORD'),
-            database=os.getenv('DATABASE_NAME')
-        )
-        emoji, action = positions[position]
-        await ctx.send("Ingrese el nombre del show")
-        name=await bot.wait_for('message', check=lambda message: message.author == ctx.author)
-        await ctx.send("Ingrese el alias del show")
-        alias=await bot.wait_for('message', check=lambda message: message.author == ctx.author)
-        await ctx.send("Ingrese el episodio")
-        episodio=await bot.wait_for('message', check=lambda message: message.author == ctx.author)
-        await ctx.send("Ingrese el link de la imagen")
-        imagen=await bot.wait_for('message', check=lambda message: message.author == ctx.author)
-        await ctx.send("Ingrese el estado del episodio")
-        listo=await bot.wait_for('message', check=lambda message: message.author == ctx.author)
-        await ctx.send("Ingrese el link del webhook a usar")
-        webhook=await bot.wait_for('message', check=lambda message: message.author == ctx.author)
-        name, alias, episodio, imagen, listo, webhook = name.content, alias.content, episodio.content, imagen.content, listo.content, webhook.content
-        emoji, action = positions[listo.lower()]
-        await add_show_to_db(database, table=f'{ctx.guild.name}_anime', titulo=name, alias=alias, episodio=episodio, listo=emoji, imagen=imagen, webhook=webhook)
-        await send_status_embed(ctx, name, episodio, action, '<a:Listo:1151660812759478342>', emoji, imagen, webhook)
-        await ctx.send(f"El capitulo {n_epi} del anime {name} ha sido agregado a la base de datos.")
     
-@bot.command()
-async def dbinfo(ctx):
-    await check_db_info(ctx, table=f'{ctx.guild.name.lower()}_anime')
     
-bot.run(os.getenv('DISCORD_TOKEN'))
+##################################################################################
+#Bot run
+bot.run(os.getenv('YUKITEST'))
