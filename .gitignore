@@ -1,10 +1,15 @@
 src/.env
 
-src/modules/__pycache__
+src/modules/__pycache__/
 
-src python/embeds/
+src/himatimes/
+
+src/modules/functions/
+
+src/modules/jpaw/pasteFormat.py
 
 src python/__pycache__/
 
-node_modules/
 env/
+
+src/modules/jpaw/__pycache__/

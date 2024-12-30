@@ -30,7 +30,7 @@ async def on_ready():
 
 ##################################################################################
 #JPAW paste commands
-@commands.has_role(889001453316878367)        
+#@commands.has_role(889001453316878367)        
 @slash.slash(name="Paste",
              description="Genera paste de emision",
              options=[
@@ -41,88 +41,132 @@ async def on_ready():
                     required=True
                 ),
                 create_option(
-                    name="routes",
+                    name="version_1",
                     description="Rutas de los capitulos",
                     option_type=3,
                     required=True
                 ),
-             ])
-async def paste(ctx: SlashContext, status, routes):
-    from jpawPaste import createPaste
-    name, fansub, response = await createPaste(status, routes)
-    print(fansub, name)
-    fansub = fansub.replace(name, "")
-    
-    title = discord.Embed(title="Titulo del paste", 
-                            description=f"{name}", 
-                            color=discord.Color.green()
-                            )
-    version = discord.Embed(title="Version", 
-                            description=f"{fansub}", 
-                            color=discord.Color.green()
-                            )
-    msgtitle = await ctx.send(embed=title)
-    msgversion = await ctx.send(embed=version)
-    
-    try:    
-        embed = discord.Embed(title="Paste generado", 
-                            description=f"El paste ha sido generado correctamente\n\n```{response}```", 
-                            color=discord.Color.green()
-                            )
-        msg = await ctx.send(embed=embed)
-        await asyncio.sleep(60)
-        await msgtitle.delete()
-        await msgversion.delete()
-        await msg.delete()
-        
-    except Exception as e:
-        print(e)
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            temp_file.write(response.encode('utf-8'))
-            temp_file.close()
-            file_path = temp_file.name
-            msg = await ctx.send(file=discord.File(file_path, "generated_paste.txt"))
-            os.remove(file_path)
-            await asyncio.sleep(60)
-            await msgtitle.delete()
-            await msgversion.delete()
-            await msg.delete()
-    
-@commands.has_role(889001453316878367)
-@slash.slash(name="newCap",
-             description="Genera paste para nuevo capitulo en emision",
-             options=[
-                 create_option(
-                    name="number",
-                    description="Numero del capitulo",
+                create_option(
+                    name="version_2",
+                    description="Rutas de los capitulos",
                     option_type=3,
-                    required=True
+                    required=False
                 ),
                 create_option(
-                    name="routes",
-                    description="Rutas del capitulo",
+                    name="version_3",
+                    description="Rutas de los capitulos",
                     option_type=3,
-                    required=True
+                    required=False
                 ),
+                create_option(
+                    name="version_4",
+                    description="Rutas de los capitulos",
+                    option_type=3,
+                    required=False
+                ),
+                create_option(
+                    name="version_5",
+                    description="Rutas de los capitulos",
+                    option_type=3,
+                    required=False
+                ),
+                create_option(
+                    name="version_6",
+                    description="Rutas de los capitulos",
+                    option_type=3,
+                    required=False
+                )
              ])
-async def newCap(ctx: SlashContext, number, routes):
-    from jpawPaste import newemisionCap
-    response = await newemisionCap(number, routes)    
-    embed = discord.Embed(title="Paste generado", 
-                        description=f"El paste ha sido generado correctamente\n\n```{response}```", 
-                        color=discord.Color.green()
-                        )
-    msg = await ctx.send(embed=embed)
-    await asyncio.sleep(15)
-    await msg.delete()
+async def paste(ctx: SlashContext, status, version_1 = '', version_2 = '', version_3 = '', version_4 = '', version_5 = '', version_6 = ''):
+    from jpawPaste import createPaste
+    from database import new_paste
 
-##################################################################################
-#Moderation commands
+    await ctx.defer()
+    
+    response = '' 
+    response2 = '' 
+    response3 = '' 
+    response4 = '' 
+    response5 = ''  
+    response6 = ''
+    fansub = ''
+    fansub2 = ''
+    fansub3 = ''
+    fansub4 = ''
+    fansub5 = ''
+    fansub6 = ''    
+    
+    if version_2 != '':
+        name2, fansub2, response2 = await createPaste(status, version_2)
+    if version_3 != '':
+        name3, fansub3, response3 = await createPaste(status, version_3)
+    if version_4 != '':
+        name4, fansub4, response4 = await createPaste(status, version_4)
+    if version_5 != '':
+        name5, fansub5, response5 = await createPaste(status, version_5)
+    if version_6 != '':
+        name6, fansub6, response6 = await createPaste(status, version_6)
 
-@slash.slash(name="purge")
-async def purge(ctx: SlashContext, amount: int = 1):
-    from moderation import clear
-    await clear(ctx, amount)
+    name, fansub, response = await createPaste(status, version_1)
+    print(fansub, name)
+
+    paste_url = await new_paste(name, 
+                                response, 
+                                response2, 
+                                response3, 
+                                response4, 
+                                response5, 
+                                response6,
+                                fansub,
+                                fansub2,
+                                fansub3,
+                                fansub4,
+                                fansub5,
+                                fansub6)
+    
+    url = f'https://paste.japan-paw.net/?v={paste_url}'
+    embed = discord.Embed(title="Paste Generado",
+              description=f"El siguiente es el enlace de tu paste:\n\n{url}",
+              color=discord.Color.green())
+
+    await ctx.send(embed=embed)
+    
+        
+# @commands.has_role(889001453316878367)
+# @slash.slash(name="newCap",
+#              description="Genera paste para nuevo capitulo en emision",
+#              options=[
+#                  create_option(
+#                     name="number",
+#                     description="Numero del capitulo",
+#                     option_type=3,
+#                     required=True
+#                 ),
+#                 create_option(
+#                     name="routes",
+#                     description="Rutas del capitulo",
+#                     option_type=3,
+#                     required=True
+#                 ),
+#              ])
+# async def newCap(ctx: SlashContext, number, routes):
+#     from jpawPaste import newemisionCap
+#     response = await newemisionCap(number, routes)    
+#     embed = discord.Embed(title="Paste generado", 
+#                         description=f"El paste ha sido generado correctamente\n\n```{response}```", 
+#                         color=discord.Color.green()
+#                         )
+#     msg = await ctx.send(embed=embed)
+#     await asyncio.sleep(15)
+#     await msg.delete()
+# 
+# ##################################################################################
+# #Moderation commands
+# 
+# @slash.slash(name="purge")
+# async def purge(ctx: SlashContext, amount: int = 1):
+#     from moderation import clear
+#     await clear(ctx, amount)
     
     
 ##################################################################################

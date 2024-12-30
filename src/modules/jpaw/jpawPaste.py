@@ -9,7 +9,7 @@ estructura = {
     "linkVipEmision": "https://vips.japan-vip.xyz/1:/",
     "linkNormal": "https://anime.j-paw.xyz/0:down/",
     "linkEmision": "https://emision.j-paw.xyz/0:down/",
-    "linkPubli1": "https://shrinkme.io/st?api=9ec95a3292777e0d42f217ecc7a7e41ba50b5c66&url=ouo.io/qs/1f3tWCLF?s=",
+    "linkPubli1": "https://rinku.me/st?api=64f5521f1753a9373bd75e83158f2a6c5baaf44d&url=ouo.io/qs/1f3tWCLF?s=",
 }
     
 async def createNormalRoute(status, routes):
@@ -44,6 +44,7 @@ async def createNormalRoute(status, routes):
 async def createPaste(status, routes):
     if status.lower() == 'finalizado':
         routes = await clearRoutesFin(routes)
+        print(routes[0][0], routes[0][1])
         vipLink = f'\n{linkvipP1}{estructura["linkVipNormal"]}{await normalizeText(routes[0][0])}/{await normalizeText(routes[0][1])}/{linkvipP2}\n'
     elif status.lower() == 'emision':
         routes = await clearRoutes(routes)
@@ -55,8 +56,9 @@ async def createPaste(status, routes):
     for link in normalLinks:
         chapters += 1
         paste += f'[url={await validUrl(link)}] Capitulo {chapters} [/url]\n'
+    paste+='[/center]'
         
-    return routes[0][1], routes[0][2], paste
+    return routes[0][1], f'{routes[0][2]}'.replace(routes[0][1], ''), paste
 
 async def newemisionCap(number, route):
     routes = await clearRoutes(route)
