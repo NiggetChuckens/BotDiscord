@@ -30,7 +30,7 @@ async def on_ready():
 
 ##################################################################################
 #JPAW paste commands
-#@commands.has_role(889001453316878367)        
+@commands.has_role(889001453316878367)        
 @slash.slash(name="Paste",
              description="Genera paste de emision",
              options=[
@@ -78,9 +78,27 @@ async def on_ready():
                 )
              ])
 async def paste(ctx: SlashContext, status, version_1 = '', version_2 = '', version_3 = '', version_4 = '', version_5 = '', version_6 = ''):
+    """
+    Handles the creation of multiple pastes and sends a response with the generated paste URL.
+    Args:
+        ctx (SlashContext): The context of the command.
+        status (str): The status to be included in the paste.
+        version_1 (str, optional): The first version to be included in the paste. Defaults to ''.
+        version_2 (str, optional): The second version to be included in the paste. Defaults to ''.
+        version_3 (str, optional): The third version to be included in the paste. Defaults to ''.
+        version_4 (str, optional): The fourth version to be included in the paste. Defaults to ''.
+        version_5 (str, optional): The fifth version to be included in the paste. Defaults to ''.
+        version_6 (str, optional): The sixth version to be included in the paste. Defaults to ''.
+    Returns:
+        None
+    """
     from jpawPaste import createPaste
     from database import new_paste
 
+    if ctx.guild_id != 294403414442639360:
+        await ctx.send("Este comando solo esta disponible en el servidor de Japan Paw")
+        return
+    
     await ctx.defer()
     
     response = '' 
@@ -108,7 +126,6 @@ async def paste(ctx: SlashContext, status, version_1 = '', version_2 = '', versi
         name6, fansub6, response6 = await createPaste(status, version_6)
 
     name, fansub, response = await createPaste(status, version_1)
-    print(fansub, name)
 
     paste_url = await new_paste(name, 
                                 response, 
@@ -124,13 +141,67 @@ async def paste(ctx: SlashContext, status, version_1 = '', version_2 = '', versi
                                 fansub5,
                                 fansub6)
     
-    url = f'https://paste.japan-paw.net/?v={paste_url}'
     embed = discord.Embed(title="Paste Generado",
-              description=f"El siguiente es el enlace de tu paste:\n\n{url}",
+              description=f"El siguiente es el enlace de tu paste:\n\nhttps://paste.japan-paw.net/?v={paste_url}",
               color=discord.Color.green())
 
     await ctx.send(embed=embed)
     
+    
+@slash.slash(name="Buscar_paste",
+              description="Busca paste por nombre",
+              options=[
+                  create_option(
+                      name="anime",
+                      description="Nombre del anime",
+                      option_type=3,
+                      required=True
+                  )
+              ])
+async def Buscar_paste(ctx: SlashContext, anime):
+    """
+    Handles the Buscar_paste command to search for anime paste links in the database and send the results in chunks.
+    Args:
+        ctx (SlashContext): The context of the command.
+        anime (str): The name of the anime to search for.
+    Returns:
+        None
+    Behavior:
+        - Checks if the command is used in the specific guild (server) with ID 294403414442639360.
+        - If not, sends a message indicating the command is only available in the specified server.
+        - Defers the response to allow for processing time.
+        - Searches for the anime in the database.
+        - Splits the search results into chunks of 25 items.
+        - For each chunk, constructs a list of URLs truncated to fit within Discord's character limit.
+        - Sends an embedded message with the search results.
+    """
+    from database import search_anime
+    
+    if ctx.guild_id != 294403414442639360:
+        await ctx.send("Este comando solo esta disponible en el servidor de Japan Paw")
+        return
+
+    await ctx.defer()
+
+    chunk_size = 25
+    result = search_anime(anime)
+    chunks = [result[i:i+chunk_size] for i in range(0, len(result), chunk_size)]
+
+    for chunk in chunks:
+        truncated_urls = []
+        current_length = 0
+        for item in chunk:
+            if not truncated_urls or current_length + len(item[1]) <= 4091:
+                truncated_urls.append(f'[{item[1]}](https://paste.japan-paw.net/?v={item[0]})')
+                current_length += len(item[1]) + 5
+
+        url = '\n'.join(truncated_urls)
+
+        embed = discord.Embed(title=f"Paste encontrados con el nombre: {anime}",
+                              description=f"{url}",
+                              color=discord.Color.green())
+
+        msg = await ctx.send(embed=embed)
         
 # @commands.has_role(889001453316878367)
 # @slash.slash(name="newCap",
@@ -151,6 +222,10 @@ async def paste(ctx: SlashContext, status, version_1 = '', version_2 = '', versi
 #              ])
 # async def newCap(ctx: SlashContext, number, routes):
 #     from jpawPaste import newemisionCap
+#
+#     if ctx.guild_id != 294403414442639360:
+#         await ctx.send("Este comando solo esta disponible en el servidor de Japan Paw")
+#         return
 #     response = await newemisionCap(number, routes)    
 #     embed = discord.Embed(title="Paste generado", 
 #                         description=f"El paste ha sido generado correctamente\n\n```{response}```", 
@@ -171,4 +246,4 @@ async def paste(ctx: SlashContext, status, version_1 = '', version_2 = '', versi
     
 ##################################################################################
 #Bot run
-bot.run(os.getenv('YUKITEST'))
+bot.run(os.getenv('JPAW'))

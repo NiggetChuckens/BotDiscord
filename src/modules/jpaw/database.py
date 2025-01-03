@@ -13,7 +13,7 @@ db = mysql.connector.connect(
 cursor = db.cursor()
 
 
-def new_paste(
+async def new_paste(
     name = None,
     mirror1 = None,
     mirror2 = None,
@@ -28,7 +28,25 @@ def new_paste(
     fansub5 = None,
     fansub6 = None,
     ):
-    
+    """
+    Inserts a new paste entry into the database and returns the ID of the newly created paste.
+    Args:
+        name (str, optional): The title of the paste.
+        mirror1 (str, optional): URL for the first mirror.
+        mirror2 (str, optional): URL for the second mirror.
+        mirror3 (str, optional): URL for the third mirror.
+        mirror4 (str, optional): URL for the fourth mirror.
+        mirror5 (str, optional): URL for the fifth mirror.
+        mirror6 (str, optional): URL for the sixth mirror.
+        fansub1 (str, optional): Name for the first fansub.
+        fansub2 (str, optional): Name for the second fansub.
+        fansub3 (str, optional): Name for the third fansub.
+        fansub4 (str, optional): Name for the fourth fansub.
+        fansub5 (str, optional): Name for the fifth fansub.
+        fansub6 (str, optional): Name for the sixth fansub.
+    Returns:
+        int: The ID of the newly created paste.
+    """
     query = (
         "INSERT INTO `pastes`"
         + "(`id`, `pass`, `title`, `create_at`, `Mirror1`, `Mirror2`, `Mirror3`, `Mirror4`, `Mirror5`, `Mirror6`,"
@@ -44,11 +62,27 @@ def new_paste(
     return result[0]
     
     
-def select_version():
+async def search_anime(anime=None):
+    """
+    Searches for anime titles in the database that match the given keyword.
+
+    Args:
+        anime (str, optional): The keyword to search for in anime titles. Defaults to None.
+
+    Returns:
+        list: A list of tuples containing the id and title of the matching anime.
+    """
+    query = f"select id, title from `pastes` where title like '%{anime}%';"
+    cursor.execute(query)
+    return cursor.fetchall()
+
+def add_version():
     pass
 
 def select_paste():
     pass
 
 if __name__ == '__main__':
-    new_paste(name='Tesánto')
+    result = search_anime(anime='hori')
+    for item in result:
+        print(f'[{item[1]}](https://paste.japan-paw.net/?v={item[0]})')
